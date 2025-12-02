@@ -47,6 +47,8 @@ jobs:
           SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
+          echo "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          chmod 600 ~/.snowflake/rsa_key.p8
           cat > ~/.snowflake/config.toml << EOF
           default_connection_name = "ci"
 
@@ -54,9 +56,7 @@ jobs:
           account = "${SF_ACCOUNT}"
           user = "${SF_USER}"
           authenticator = "SNOWFLAKE_JWT"
-          private_key_raw = """
-          ${SF_PRIVATE_KEY}
-          """
+          private_key_path = "~/.snowflake/rsa_key.p8"
           database = "ESG_REPORTING"
           schema = "PROD"
           warehouse = "ESG_WH"
@@ -109,6 +109,8 @@ jobs:
           SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
+          echo "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          chmod 600 ~/.snowflake/rsa_key.p8
           cat > ~/.snowflake/config.toml << EOF
           default_connection_name = "ci"
 
@@ -116,9 +118,7 @@ jobs:
           account = "${SF_ACCOUNT}"
           user = "${SF_USER}"
           authenticator = "SNOWFLAKE_JWT"
-          private_key_raw = """
-          ${SF_PRIVATE_KEY}
-          """
+          private_key_path = "~/.snowflake/rsa_key.p8"
           database = "ESG_REPORTING"
           schema = "PROD"
           warehouse = "ESG_WH"
