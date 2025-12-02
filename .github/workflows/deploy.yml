@@ -47,9 +47,12 @@ jobs:
           SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
+          echo "Key length: ${#SF_PRIVATE_KEY}"
+          echo "Key starts with: $(echo "${SF_PRIVATE_KEY}" | cut -c1-20)"
           printf '%s\n' "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          cat ~/.snowflake/rsa_key.p8 | head -1
+          echo "File size: $(wc -c < ~/.snowflake/rsa_key.p8)"
+          echo "Line count: $(wc -l < ~/.snowflake/rsa_key.p8)"
           cat > ~/.snowflake/config.toml << TOMLEOF
           default_connection_name = "ci"
 
