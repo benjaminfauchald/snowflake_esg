@@ -32,6 +32,7 @@ jobs:
 
       - name: Validate YAML syntax
         run: |
+          pip install pyyaml -q
           python -c "import yaml; yaml.safe_load(open('snowflake.yml'))"
           echo "snowflake.yml is valid"
 
