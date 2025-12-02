@@ -1,0 +1,113 @@
+name: Deploy ESG App to Snowflake
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_CONNECTIONS_DEFAULT_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_CONNECTIONS_DEFAULT_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+  SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE: ESG_REPORTING
+  SNOWFLAKE_CONNECTIONS_DEFAULT_SCHEMA: PROD
+  SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE: ESG_WH
+
+jobs:
+  validate:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate YAML syntax
+        run: |
+          python -c "import yaml; yaml.safe_load(open('snowflake.yml'))"
+          echo "snowflake.yml is valid"
+
+      - name: Check required files exist
+        run: |
+          test -f snowflake.yml
+          test -f app/streamlit_app.py
+          test -f setup/01_database.sql
+          test -f setup/02_tables.sql
+          echo "All required files present"
+
+  deploy:
+    name: Deploy to Snowflake
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-cli-action@v2.0
+        with:
+          cli-version: "3.13.0"
+
+      - name: Test Snowflake connection
+        run: |
+          snow connection test
+          echo "Connection successful"
+
+      - name: Deploy database infrastructure
+        run: |
+          echo "Setting up database..."
+          snow sql -f setup/01_database.sql
+          echo "Creating tables..."
+          snow sql -f setup/02_tables.sql
+          echo "Infrastructure deployed successfully"
+
+      - name: Deploy Streamlit app
+        run: |
+          echo "Deploying Streamlit app..."
+          snow streamlit deploy --replace
+          echo "Streamlit app deployed successfully"
+
+      - name: Get app URL
+        run: |
+          echo "Getting app URL..."
+          snow streamlit get-url esg_app || echo "App URL will be available in Snowflake UI"
+
+  seed-data:
+    name: Load Sample Data
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-cli-action@v2.0
+        with:
+          cli-version: "3.13.0"
+
+      - name: Check if data exists
+        id: check-data
+        continue-on-error: true
+        run: |
+          result=$(snow sql -q "SELECT COUNT(*) as cnt FROM ESG_REPORTING.PROD.ESG_METRICS" --format json 2>/dev/null || echo "[]")
+          count=$(echo $result | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['CNT'] if data else 0)" 2>/dev/null || echo "0")
+          echo "count=$count" >> $GITHUB_OUTPUT
+
+      - name: Load sample data
+        if: steps.check-data.outputs.count == '0'
+        run: |
+          echo "Loading sample data..."
+          snow sql -f setup/03_sample_data.sql
+          echo "Sample data loaded successfully"
