@@ -5,7 +5,6 @@ entities:
     type: streamlit
     query_warehouse: ESG_WH
     main_file: app/streamlit_app.py
-    pages_dir: app/pages
     title: "ESG Reporting Portal"
     artifacts:
-      - app/
+      - app/streamlit_app.py
