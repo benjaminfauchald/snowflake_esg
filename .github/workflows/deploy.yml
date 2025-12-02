@@ -49,25 +49,10 @@ jobs:
           mkdir -p ~/.snowflake
           echo "${SF_PRIVATE_KEY_B64}" | base64 -d > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          echo "=== Debug: Check for whitespace in secrets ==="
-          echo "Account length: ${#SF_ACCOUNT} chars"
-          echo "User length: ${#SF_USER} chars"
           CLEAN_ACCOUNT=$(echo "${SF_ACCOUNT}" | tr -d '[:space:]')
           CLEAN_USER=$(echo "${SF_USER}" | tr -d '[:space:]')
-          echo "Cleaned account length: ${#CLEAN_ACCOUNT} chars"
-          echo "Cleaned user length: ${#CLEAN_USER} chars"
-          echo "=== Private Key Info ==="
-          echo "File size: $(wc -c < ~/.snowflake/rsa_key.p8) bytes"
-          echo "Line count: $(wc -l < ~/.snowflake/rsa_key.p8) lines"
-          echo "First line: $(head -1 ~/.snowflake/rsa_key.p8)"
-          echo "Last line: $(tail -1 ~/.snowflake/rsa_key.p8)"
-          echo "=== Public Key Fingerprint (verify in Snowflake) ==="
-          openssl rsa -in ~/.snowflake/rsa_key.p8 -pubout 2>/dev/null | openssl md5 | awk '{print $2}'
-          echo "=== Creating config.toml ==="
           printf 'default_connection_name = "ci"\n\n[connections.ci]\naccount = "%s"\nuser = "%s"\nauthenticator = "SNOWFLAKE_JWT"\nprivate_key_path = "/home/runner/.snowflake/rsa_key.p8"\ndatabase = "ESG_REPORTING"\nschema = "PROD"\nwarehouse = "ESG_WH"\n' "${CLEAN_ACCOUNT}" "${CLEAN_USER}" > ~/.snowflake/config.toml
           chmod 600 ~/.snowflake/config.toml
-          echo "=== Config file contents (redacted) ==="
-          cat ~/.snowflake/config.toml | sed 's/account = .*/account = "***"/' | sed 's/user = .*/user = "***"/'
 
       - name: Test Snowflake connection
         run: |
@@ -117,7 +102,9 @@ jobs:
           mkdir -p ~/.snowflake
           echo "${SF_PRIVATE_KEY_B64}" | base64 -d > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          printf 'default_connection_name = "ci"\n\n[connections.ci]\naccount = "%s"\nuser = "%s"\nauthenticator = "SNOWFLAKE_JWT"\nprivate_key_path = "/home/runner/.snowflake/rsa_key.p8"\ndatabase = "ESG_REPORTING"\nschema = "PROD"\nwarehouse = "ESG_WH"\n' "${SF_ACCOUNT}" "${SF_USER}" > ~/.snowflake/config.toml
+          CLEAN_ACCOUNT=$(echo "${SF_ACCOUNT}" | tr -d '[:space:]')
+          CLEAN_USER=$(echo "${SF_USER}" | tr -d '[:space:]')
+          printf 'default_connection_name = "ci"\n\n[connections.ci]\naccount = "%s"\nuser = "%s"\nauthenticator = "SNOWFLAKE_JWT"\nprivate_key_path = "/home/runner/.snowflake/rsa_key.p8"\ndatabase = "ESG_REPORTING"\nschema = "PROD"\nwarehouse = "ESG_WH"\n' "${CLEAN_ACCOUNT}" "${CLEAN_USER}" > ~/.snowflake/config.toml
           chmod 600 ~/.snowflake/config.toml
 
       - name: Check if data exists
