@@ -9,8 +9,6 @@ import pandas as pd
 from snowflake.snowpark.context import get_active_session
 from utils.database import get_all_records
 
-st.set_page_config(page_title="AI Insights", page_icon="🤖", layout="wide")
-
 st.title("🤖 AI Insights")
 st.markdown("Get AI-powered analysis of your ESG data using Snowflake Cortex")
 

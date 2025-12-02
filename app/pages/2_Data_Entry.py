@@ -15,8 +15,6 @@ from utils.database import (
     delete_record
 )
 
-st.set_page_config(page_title="ESG Data Entry", page_icon="✏️", layout="wide")
-
 st.title("✏️ ESG Data Entry")
 st.markdown("Add, edit, or delete ESG reporting records")
 

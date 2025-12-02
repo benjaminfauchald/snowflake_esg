@@ -10,8 +10,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.database import get_all_records, get_summary_stats, get_years
 
-st.set_page_config(page_title="ESG Dashboard", page_icon="📊", layout="wide")
-
 st.title("📊 ESG Dashboard")
 st.markdown("Overview of Environmental, Social, and Governance metrics")
 

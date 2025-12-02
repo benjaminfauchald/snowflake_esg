@@ -10,8 +10,6 @@ from datetime import date
 from utils.database import get_all_records, get_years, get_organizations
 from utils.export import export_to_csv, get_filtered_data, generate_report_filename
 
-st.set_page_config(page_title="ESG Reports", page_icon="📥", layout="wide")
-
 st.title("📥 ESG Reports")
 st.markdown("Download ESG data for government reporting and analysis")
 

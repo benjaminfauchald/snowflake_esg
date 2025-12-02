@@ -79,12 +79,13 @@ with col1:
 
 with col2:
     st.markdown("### Quick Actions")
-    if st.button("➕ Add New ESG Record", use_container_width=True):
-        st.switch_page("pages/2_Data_Entry.py")
-    if st.button("📊 View Dashboard", use_container_width=True):
-        st.switch_page("pages/1_Dashboard.py")
-    if st.button("📥 Download Report", use_container_width=True):
-        st.switch_page("pages/3_Reports.py")
+    st.info("👈 Use the sidebar to navigate between pages")
+    st.markdown("""
+    - **Dashboard** - View metrics and charts
+    - **Data Entry** - Add or edit records
+    - **Reports** - Download ESG reports
+    - **AI Insights** - Get AI analysis
+    """)
 
 # Footer
 st.markdown("---")
