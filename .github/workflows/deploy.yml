@@ -57,20 +57,7 @@ jobs:
           echo "=== Public Key Fingerprint (verify in Snowflake) ==="
           openssl rsa -in ~/.snowflake/rsa_key.p8 -pubout 2>/dev/null | openssl md5 | awk '{print $2}'
           echo "=== Creating config.toml ==="
-          cat > ~/.snowflake/config.toml << 'TOMLEOF'
-default_connection_name = "ci"
-
-[connections.ci]
-account = "ACCOUNT_PLACEHOLDER"
-user = "USER_PLACEHOLDER"
-authenticator = "SNOWFLAKE_JWT"
-private_key_path = "/home/runner/.snowflake/rsa_key.p8"
-database = "ESG_REPORTING"
-schema = "PROD"
-warehouse = "ESG_WH"
-TOMLEOF
-          sed -i "s/ACCOUNT_PLACEHOLDER/${SF_ACCOUNT}/g" ~/.snowflake/config.toml
-          sed -i "s/USER_PLACEHOLDER/${SF_USER}/g" ~/.snowflake/config.toml
+          printf 'default_connection_name = "ci"\n\n[connections.ci]\naccount = "%s"\nuser = "%s"\nauthenticator = "SNOWFLAKE_JWT"\nprivate_key_path = "/home/runner/.snowflake/rsa_key.p8"\ndatabase = "ESG_REPORTING"\nschema = "PROD"\nwarehouse = "ESG_WH"\n' "${SF_ACCOUNT}" "${SF_USER}" > ~/.snowflake/config.toml
           chmod 600 ~/.snowflake/config.toml
           echo "=== Config file contents (redacted) ==="
           cat ~/.snowflake/config.toml | sed 's/account = .*/account = "***"/' | sed 's/user = .*/user = "***"/'
@@ -123,20 +110,7 @@ TOMLEOF
           mkdir -p ~/.snowflake
           echo "${SF_PRIVATE_KEY_B64}" | base64 -d > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          cat > ~/.snowflake/config.toml << 'TOMLEOF'
-default_connection_name = "ci"
-
-[connections.ci]
-account = "ACCOUNT_PLACEHOLDER"
-user = "USER_PLACEHOLDER"
-authenticator = "SNOWFLAKE_JWT"
-private_key_path = "/home/runner/.snowflake/rsa_key.p8"
-database = "ESG_REPORTING"
-schema = "PROD"
-warehouse = "ESG_WH"
-TOMLEOF
-          sed -i "s/ACCOUNT_PLACEHOLDER/${SF_ACCOUNT}/g" ~/.snowflake/config.toml
-          sed -i "s/USER_PLACEHOLDER/${SF_USER}/g" ~/.snowflake/config.toml
+          printf 'default_connection_name = "ci"\n\n[connections.ci]\naccount = "%s"\nuser = "%s"\nauthenticator = "SNOWFLAKE_JWT"\nprivate_key_path = "/home/runner/.snowflake/rsa_key.p8"\ndatabase = "ESG_REPORTING"\nschema = "PROD"\nwarehouse = "ESG_WH"\n' "${SF_ACCOUNT}" "${SF_USER}" > ~/.snowflake/config.toml
           chmod 600 ~/.snowflake/config.toml
 
       - name: Check if data exists
