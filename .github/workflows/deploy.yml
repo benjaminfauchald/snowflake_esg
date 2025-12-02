@@ -10,8 +10,10 @@ on:
   workflow_dispatch:
 
 env:
+  SNOWFLAKE_DEFAULT_CONNECTION_NAME: default
   SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
   SNOWFLAKE_CONNECTIONS_DEFAULT_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_CONNECTIONS_DEFAULT_AUTHENTICATOR: SNOWFLAKE_JWT
   SNOWFLAKE_CONNECTIONS_DEFAULT_PRIVATE_KEY_RAW: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
   SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE: ESG_REPORTING
   SNOWFLAKE_CONNECTIONS_DEFAULT_SCHEMA: PROD
@@ -24,17 +26,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Validate YAML syntax
-        run: |
-          pip install pyyaml -q
-          python -c "import yaml; yaml.safe_load(open('snowflake.yml'))"
-          echo "snowflake.yml is valid"
 
       - name: Check required files exist
         run: |
@@ -61,27 +52,27 @@ jobs:
 
       - name: Test Snowflake connection
         run: |
-          snow connection test
+          snow connection test -c default
           echo "Connection successful"
 
       - name: Deploy database infrastructure
         run: |
           echo "Setting up database..."
-          snow sql -f setup/01_database.sql
+          snow sql -f setup/01_database.sql -c default
           echo "Creating tables..."
-          snow sql -f setup/02_tables.sql
+          snow sql -f setup/02_tables.sql -c default
           echo "Infrastructure deployed successfully"
 
       - name: Deploy Streamlit app
         run: |
           echo "Deploying Streamlit app..."
-          snow streamlit deploy --replace
+          snow streamlit deploy --replace -c default
           echo "Streamlit app deployed successfully"
 
       - name: Get app URL
         run: |
           echo "Getting app URL..."
-          snow streamlit get-url esg_app || echo "App URL will be available in Snowflake UI"
+          snow streamlit get-url esg_app -c default || echo "App URL will be available in Snowflake UI"
 
   seed-data:
     name: Load Sample Data
@@ -102,7 +93,7 @@ jobs:
         id: check-data
         continue-on-error: true
         run: |
-          result=$(snow sql -q "SELECT COUNT(*) as cnt FROM ESG_REPORTING.PROD.ESG_METRICS" --format json 2>/dev/null || echo "[]")
+          result=$(snow sql -q "SELECT COUNT(*) as cnt FROM ESG_REPORTING.PROD.ESG_METRICS" -c default --format json 2>/dev/null || echo "[]")
           count=$(echo $result | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['CNT'] if data else 0)" 2>/dev/null || echo "0")
           echo "count=$count" >> $GITHUB_OUTPUT
 
@@ -110,5 +101,5 @@ jobs:
         if: steps.check-data.outputs.count == '0'
         run: |
           echo "Loading sample data..."
-          snow sql -f setup/03_sample_data.sql
+          snow sql -f setup/03_sample_data.sql -c default
           echo "Sample data loaded successfully"
