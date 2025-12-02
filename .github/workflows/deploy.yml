@@ -47,9 +47,10 @@ jobs:
           SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
-          echo "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          printf '%s\n' "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          cat > ~/.snowflake/config.toml << EOF
+          cat ~/.snowflake/rsa_key.p8 | head -1
+          cat > ~/.snowflake/config.toml << TOMLEOF
           default_connection_name = "ci"
 
           [connections.ci]
@@ -60,7 +61,7 @@ jobs:
           database = "ESG_REPORTING"
           schema = "PROD"
           warehouse = "ESG_WH"
-          EOF
+          TOMLEOF
           chmod 600 ~/.snowflake/config.toml
 
       - name: Test Snowflake connection
@@ -109,9 +110,9 @@ jobs:
           SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
-          echo "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          printf '%s\n' "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
-          cat > ~/.snowflake/config.toml << EOF
+          cat > ~/.snowflake/config.toml << TOMLEOF
           default_connection_name = "ci"
 
           [connections.ci]
@@ -122,7 +123,7 @@ jobs:
           database = "ESG_REPORTING"
           schema = "PROD"
           warehouse = "ESG_WH"
-          EOF
+          TOMLEOF
           chmod 600 ~/.snowflake/config.toml
 
       - name: Check if data exists
