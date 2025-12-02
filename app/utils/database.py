@@ -15,7 +15,6 @@ def get_session():
     return get_active_session()
 
 
-@st.cache_data(ttl=60)
 def get_all_records() -> pd.DataFrame:
     """Fetch all ESG records from the database."""
     session = get_session()
@@ -52,7 +51,6 @@ def create_record(data: Dict[str, Any]) -> bool:
 
     try:
         session.sql(sql).collect()
-        st.cache_data.clear()
         return True
     except Exception as e:
         st.error(f"Error creating record: {e}")
@@ -87,7 +85,6 @@ def update_record(record_id: int, data: Dict[str, Any]) -> bool:
 
     try:
         session.sql(sql).collect()
-        st.cache_data.clear()
         return True
     except Exception as e:
         st.error(f"Error updating record: {e}")
@@ -102,7 +99,6 @@ def delete_record(record_id: int) -> bool:
 
     try:
         session.sql(sql).collect()
-        st.cache_data.clear()
         return True
     except Exception as e:
         st.error(f"Error deleting record: {e}")
@@ -137,14 +133,14 @@ def get_summary_stats() -> Dict[str, Any]:
 
     result = session.sql("""
         SELECT
-            COUNT(*) as total_records,
-            COUNT(DISTINCT ORGANIZATION_NAME) as total_orgs,
-            COUNT(DISTINCT REPORTING_YEAR) as total_years,
-            MAX(REPORTING_YEAR) as latest_year,
+            COUNT(*) as TOTAL_RECORDS,
+            COUNT(DISTINCT ORGANIZATION_NAME) as TOTAL_ORGS,
+            COUNT(DISTINCT REPORTING_YEAR) as TOTAL_YEARS,
+            MAX(REPORTING_YEAR) as LATEST_YEAR,
             SUM(CASE WHEN REPORTING_YEAR = (SELECT MAX(REPORTING_YEAR) FROM ESG_METRICS)
-                THEN GHG_SCOPE1_MTCO2E + COALESCE(GHG_SCOPE2_MTCO2E, 0) ELSE 0 END) as latest_emissions,
+                THEN GHG_SCOPE1_MTCO2E + COALESCE(GHG_SCOPE2_MTCO2E, 0) ELSE 0 END) as LATEST_EMISSIONS,
             AVG(CASE WHEN REPORTING_YEAR = (SELECT MAX(REPORTING_YEAR) FROM ESG_METRICS)
-                THEN RENEWABLE_ENERGY_PCT ELSE NULL END) as avg_renewable_pct
+                THEN RENEWABLE_ENERGY_PCT ELSE NULL END) as AVG_RENEWABLE_PCT
         FROM ESG_METRICS
     """).to_pandas()
 
