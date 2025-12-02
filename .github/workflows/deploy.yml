@@ -44,12 +44,10 @@ jobs:
         env:
           SF_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SF_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+          SF_PRIVATE_KEY_B64: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
-          echo "Key length: ${#SF_PRIVATE_KEY}"
-          echo "Key starts with: $(echo "${SF_PRIVATE_KEY}" | cut -c1-20)"
-          printf '%s\n' "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          echo "${SF_PRIVATE_KEY_B64}" | base64 -d > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
           echo "File size: $(wc -c < ~/.snowflake/rsa_key.p8)"
           echo "Line count: $(wc -l < ~/.snowflake/rsa_key.p8)"
@@ -110,10 +108,10 @@ jobs:
         env:
           SF_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SF_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+          SF_PRIVATE_KEY_B64: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.snowflake
-          printf '%s\n' "${SF_PRIVATE_KEY}" > ~/.snowflake/rsa_key.p8
+          echo "${SF_PRIVATE_KEY_B64}" | base64 -d > ~/.snowflake/rsa_key.p8
           chmod 600 ~/.snowflake/rsa_key.p8
           cat > ~/.snowflake/config.toml << TOMLEOF
           default_connection_name = "ci"
