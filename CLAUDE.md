@@ -52,23 +52,38 @@ session = get_active_session()
 
 ### Handling NaN/Null Values
 - Pandas returns NaN for null database values
-- Use helper functions to safely convert:
+- **CRITICAL: Don't use `or 0` pattern!** NaN is truthy in Python, so `NaN or 0` returns NaN!
+- Use `pd.isna()` for reliable NaN detection:
 ```python
+import pandas as pd
+
 def safe_int(val, default=0):
+    if pd.isna(val):
+        return default
     try:
-        if val is None or (isinstance(val, float) and str(val) == 'nan'):
-            return default
         return int(val)
     except:
         return default
 
 def safe_float(val, default=0.0):
+    if pd.isna(val):
+        return default
     try:
-        if val is None or (isinstance(val, float) and str(val) == 'nan'):
-            return default
         return float(val)
     except:
         return default
+```
+
+**Bad pattern (causes "cannot convert float NaN to integer"):**
+```python
+# DON'T DO THIS:
+value = int(row['COLUMN'] or 0)  # NaN or 0 = NaN, then int(NaN) fails!
+```
+
+**Good pattern:**
+```python
+# DO THIS:
+value = safe_int(row['COLUMN'], 0)
 ```
 
 ## Deploy Commands
