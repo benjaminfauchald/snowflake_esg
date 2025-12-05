@@ -3,8 +3,8 @@ definition_version: 2
 entities:
   esg_app:
     type: streamlit
-    query_warehouse: ESG_WH
-    main_file: app/streamlit_app.py
+    query_warehouse: COMPUTE_WH
+    main_file: streamlit_app.py
     title: "ESG Reporting Portal"
     artifacts:
-      - app/streamlit_app.py
+      - streamlit_app.py

@@ -1,91 +1,194 @@
--- ESG Metrics Table
--- Contains Environmental, Social, and Governance reporting data
+-- SET ESG One Report (Form 56-1) Data Management
+-- For Thai listed companies submitting to Stock Exchange of Thailand
+-- Based on SEC Reporting Guide requirements
 
 USE DATABASE ESG_REPORTING;
 USE SCHEMA PROD;
 
-CREATE TABLE IF NOT EXISTS ESG_METRICS (
-    -- Primary Key
-    id INTEGER AUTOINCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS ESG_METRICS;
 
-    -- Organization Info
-    organization_name VARCHAR(255) NOT NULL,
-    reporting_year INTEGER NOT NULL,
-    reporting_date DATE,
+CREATE TABLE ESG_METRICS (
+    ID INTEGER AUTOINCREMENT PRIMARY KEY,
 
-    -- Environmental Metrics
-    ghg_scope1_mtco2e DECIMAL(15,2) COMMENT 'Direct GHG emissions (metric tons CO2e)',
-    ghg_scope2_mtco2e DECIMAL(15,2) COMMENT 'Indirect GHG emissions from energy',
-    energy_consumption_mwh DECIMAL(15,2) COMMENT 'Total energy consumption (MWh)',
-    renewable_energy_pct DECIMAL(5,2) COMMENT 'Percentage of renewable energy',
-    water_consumption_m3 DECIMAL(15,2) COMMENT 'Water consumption (cubic meters)',
-    waste_generated_tons DECIMAL(15,2) COMMENT 'Total waste generated (tons)',
-    waste_recycled_pct DECIMAL(5,2) COMMENT 'Percentage of waste recycled',
+    -- Report Info
+    REPORT_YEAR INTEGER NOT NULL COMMENT 'Fiscal year for One Report',
+    REPORT_STATUS VARCHAR(30) DEFAULT 'Draft' COMMENT 'Draft, In Review, Submitted to SET, Approved',
+    SECTOR VARCHAR(50) COMMENT 'SET sector classification',
+    SUBMISSION_DEADLINE DATE COMMENT 'SET submission deadline',
 
-    -- Social Metrics
-    total_employees INTEGER COMMENT 'Total employee headcount',
-    female_employees_pct DECIMAL(5,2) COMMENT 'Percentage of female employees',
-    employee_turnover_pct DECIMAL(5,2) COMMENT 'Annual employee turnover rate',
-    safety_incidents INTEGER COMMENT 'Number of recordable safety incidents',
-    training_hours_per_employee DECIMAL(8,2) COMMENT 'Average training hours per employee',
+    -- ENVIRONMENTAL (E) - ด้านสิ่งแวดล้อม
+    -- Climate & GHG Emissions
+    GHG_SCOPE1_TCO2E DECIMAL(15,2) COMMENT 'Direct GHG emissions (tCO2e) - การปล่อยก๊าซโดยตรง',
+    GHG_SCOPE2_TCO2E DECIMAL(15,2) COMMENT 'Indirect GHG from energy (tCO2e)',
+    GHG_SCOPE3_TCO2E DECIMAL(15,2) COMMENT 'Value chain emissions (tCO2e)',
+    GHG_REDUCTION_TARGET_PCT DECIMAL(5,2) COMMENT 'GHG reduction target %',
+    GHG_REDUCTION_ACHIEVED_PCT DECIMAL(5,2) COMMENT 'GHG reduction achieved %',
 
-    -- Governance Metrics
-    board_size INTEGER COMMENT 'Number of board members',
-    board_independence_pct DECIMAL(5,2) COMMENT 'Percentage of independent directors',
-    board_female_pct DECIMAL(5,2) COMMENT 'Percentage of female board members',
-    has_ethics_policy BOOLEAN DEFAULT FALSE COMMENT 'Has formal ethics policy',
-    has_whistleblower_policy BOOLEAN DEFAULT FALSE COMMENT 'Has whistleblower protection policy',
+    -- Energy Management
+    ENERGY_TOTAL_MWH DECIMAL(15,2) COMMENT 'Total energy consumption (MWh)',
+    ENERGY_RENEWABLE_MWH DECIMAL(15,2) COMMENT 'Renewable energy used (MWh)',
+    ENERGY_INTENSITY DECIMAL(10,4) COMMENT 'Energy per unit revenue (MWh/M THB)',
+    SOLAR_INSTALLED_KW DECIMAL(15,2) COMMENT 'Solar capacity installed (kW)',
+
+    -- Water & Waste
+    WATER_CONSUMPTION_M3 DECIMAL(15,2) COMMENT 'Water consumption (cubic meters)',
+    WATER_RECYCLED_PCT DECIMAL(5,2) COMMENT 'Water recycled/reused %',
+    WASTE_TOTAL_TONS DECIMAL(15,2) COMMENT 'Total waste generated (tons)',
+    WASTE_RECYCLED_PCT DECIMAL(5,2) COMMENT 'Waste recycled %',
+    HAZARDOUS_WASTE_TONS DECIMAL(15,2) COMMENT 'Hazardous waste (tons)',
+    ZERO_WASTE_TO_LANDFILL BOOLEAN DEFAULT FALSE COMMENT 'Zero waste to landfill target',
+
+    -- Environmental Compliance
+    ENV_VIOLATIONS INTEGER DEFAULT 0 COMMENT 'Environmental violations count',
+    ENV_FINES_THB DECIMAL(15,2) DEFAULT 0 COMMENT 'Environmental fines (THB)',
+
+    -- SOCIAL (S) - ด้านสังคม
+    -- Workforce
+    EMPLOYEES_TOTAL INTEGER COMMENT 'Total employees',
+    EMPLOYEES_PERMANENT INTEGER COMMENT 'Permanent employees',
+    EMPLOYEES_CONTRACT INTEGER COMMENT 'Contract/temporary employees',
+    NEW_HIRES INTEGER COMMENT 'New hires during year',
+    TURNOVER_RATE_PCT DECIMAL(5,2) COMMENT 'Employee turnover rate %',
+
+    -- Diversity & Inclusion
+    WOMEN_WORKFORCE_PCT DECIMAL(5,2) COMMENT 'Women in workforce %',
+    WOMEN_MANAGEMENT_PCT DECIMAL(5,2) COMMENT 'Women in management %',
+    WOMEN_EXECUTIVE_PCT DECIMAL(5,2) COMMENT 'Women in executive/C-suite %',
+    DISABLED_EMPLOYEES INTEGER COMMENT 'Employees with disabilities',
+    LOCAL_EMPLOYMENT_PCT DECIMAL(5,2) COMMENT 'Local community employment %',
+
+    -- Compensation & Benefits
+    MIN_WAGE_COMPLIANCE BOOLEAN DEFAULT TRUE COMMENT 'Minimum wage compliance',
+    AVG_SALARY_THB DECIMAL(15,2) COMMENT 'Average employee salary (THB)',
+    BENEFITS_BEYOND_LEGAL BOOLEAN DEFAULT TRUE COMMENT 'Benefits beyond legal requirements',
+    PROVIDENT_FUND_PCT DECIMAL(5,2) COMMENT 'Provident fund contribution %',
+
+    -- Health & Safety (OHS)
+    LOST_TIME_INJURIES INTEGER COMMENT 'Lost time injury frequency',
+    INJURY_RATE DECIMAL(6,4) COMMENT 'Total recordable injury rate',
+    FATALITIES INTEGER DEFAULT 0 COMMENT 'Work-related fatalities',
+    SAFETY_TRAINING_HOURS DECIMAL(10,2) COMMENT 'Safety training hours total',
+    SAFETY_COMMITTEE BOOLEAN DEFAULT TRUE COMMENT 'Has safety committee',
+
+    -- Training & Development
+    TRAINING_HOURS_AVG DECIMAL(8,2) COMMENT 'Avg training hours per employee',
+    TRAINING_BUDGET_THB DECIMAL(15,2) COMMENT 'Training budget (THB)',
+    CAREER_DEVELOPMENT_PROGRAM BOOLEAN DEFAULT FALSE COMMENT 'Has career development program',
+
+    -- Community & Supply Chain
+    CSR_BUDGET_THB DECIMAL(15,2) COMMENT 'CSR investment (THB)',
+    COMMUNITY_PROJECTS INTEGER COMMENT 'Community projects conducted',
+    LOCAL_SUPPLIER_PCT DECIMAL(5,2) COMMENT 'Local supplier procurement %',
+    SUPPLIER_CODE_OF_CONDUCT BOOLEAN DEFAULT FALSE COMMENT 'Supplier code of conduct',
+    SUPPLIER_ESG_ASSESSMENT BOOLEAN DEFAULT FALSE COMMENT 'ESG assessment of suppliers',
+
+    -- GOVERNANCE (G) - ด้านธรรมาภิบาล
+    -- Board Composition
+    BOARD_TOTAL INTEGER COMMENT 'Total board members',
+    BOARD_INDEPENDENT_PCT DECIMAL(5,2) COMMENT 'Independent directors %',
+    BOARD_WOMEN_PCT DECIMAL(5,2) COMMENT 'Women on board %',
+    BOARD_MEETINGS_YEAR INTEGER COMMENT 'Board meetings per year',
+    BOARD_ATTENDANCE_PCT DECIMAL(5,2) COMMENT 'Average board attendance %',
+
+    -- Committees
+    HAS_AUDIT_COMMITTEE BOOLEAN DEFAULT TRUE COMMENT 'Has audit committee',
+    HAS_RISK_COMMITTEE BOOLEAN DEFAULT FALSE COMMENT 'Has risk management committee',
+    HAS_CG_COMMITTEE BOOLEAN DEFAULT FALSE COMMENT 'Has CG/nomination committee',
+    HAS_SUSTAINABILITY_COMMITTEE BOOLEAN DEFAULT FALSE COMMENT 'Has sustainability committee',
+
+    -- Ethics & Anti-Corruption
+    CODE_OF_CONDUCT BOOLEAN DEFAULT TRUE COMMENT 'Has code of conduct',
+    ANTI_CORRUPTION_POLICY BOOLEAN DEFAULT TRUE COMMENT 'Has anti-corruption policy',
+    WHISTLEBLOWER_POLICY BOOLEAN DEFAULT TRUE COMMENT 'Has whistleblower policy',
+    ETHICS_TRAINING_PCT DECIMAL(5,2) COMMENT 'Employees completed ethics training %',
+    CORRUPTION_CASES INTEGER DEFAULT 0 COMMENT 'Corruption cases reported',
+
+    -- Certifications & Ratings
+    CGR_SCORE VARCHAR(20) COMMENT 'CGR rating (1-5 stars)',
+    ISO14001_CERTIFIED BOOLEAN DEFAULT FALSE COMMENT 'ISO 14001 certified',
+    ISO45001_CERTIFIED BOOLEAN DEFAULT FALSE COMMENT 'ISO 45001 certified',
+    SET_ESG_RATING BOOLEAN DEFAULT FALSE COMMENT 'Listed in SET ESG Ratings',
+    THSI_MEMBER BOOLEAN DEFAULT FALSE COMMENT 'Thailand Sustainability Investment member',
+
+    -- Data Quality
+    EXTERNAL_ASSURANCE BOOLEAN DEFAULT FALSE COMMENT 'Data externally assured',
+    ASSURANCE_PROVIDER VARCHAR(100) COMMENT 'Assurance provider name',
 
     -- Metadata
-    notes TEXT COMMENT 'Additional notes or comments',
-    created_by VARCHAR(100) DEFAULT CURRENT_USER(),
-    created_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
-    updated_by VARCHAR(100),
-    updated_at TIMESTAMP_NTZ,
+    NOTES TEXT COMMENT 'Additional notes for SET submission',
+    CREATED_BY VARCHAR(100) DEFAULT CURRENT_USER(),
+    CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    UPDATED_BY VARCHAR(100),
+    UPDATED_AT TIMESTAMP_NTZ,
 
-    -- Note: Validation done in application layer (Snowflake doesn't support CHECK constraints)
-    UNIQUE (organization_name, reporting_year)
+    UNIQUE (REPORT_YEAR)
 );
 
--- Create stage for data exports
-CREATE STAGE IF NOT EXISTS EXPORT_STAGE
-    FILE_FORMAT = (
-        TYPE = CSV
-        FIELD_OPTIONALLY_ENCLOSED_BY = '"'
-        SKIP_HEADER = 0
-    );
-
--- Create view for easy reporting
-CREATE OR REPLACE VIEW ESG_REPORT_VIEW AS
-SELECT
-    id,
-    organization_name,
-    reporting_year,
-    reporting_date,
+-- Insert sample data for FY2023
+INSERT INTO ESG_METRICS (
+    REPORT_YEAR, REPORT_STATUS, SECTOR, SUBMISSION_DEADLINE,
     -- Environmental
-    ghg_scope1_mtco2e,
-    ghg_scope2_mtco2e,
-    ghg_scope1_mtco2e + COALESCE(ghg_scope2_mtco2e, 0) AS total_ghg_emissions,
-    energy_consumption_mwh,
-    renewable_energy_pct,
-    water_consumption_m3,
-    waste_generated_tons,
-    waste_recycled_pct,
+    GHG_SCOPE1_TCO2E, GHG_SCOPE2_TCO2E, GHG_SCOPE3_TCO2E, GHG_REDUCTION_TARGET_PCT, GHG_REDUCTION_ACHIEVED_PCT,
+    ENERGY_TOTAL_MWH, ENERGY_RENEWABLE_MWH, ENERGY_INTENSITY, SOLAR_INSTALLED_KW,
+    WATER_CONSUMPTION_M3, WATER_RECYCLED_PCT, WASTE_TOTAL_TONS, WASTE_RECYCLED_PCT, HAZARDOUS_WASTE_TONS, ZERO_WASTE_TO_LANDFILL,
+    ENV_VIOLATIONS, ENV_FINES_THB,
     -- Social
-    total_employees,
-    female_employees_pct,
-    employee_turnover_pct,
-    safety_incidents,
-    training_hours_per_employee,
+    EMPLOYEES_TOTAL, EMPLOYEES_PERMANENT, EMPLOYEES_CONTRACT, NEW_HIRES, TURNOVER_RATE_PCT,
+    WOMEN_WORKFORCE_PCT, WOMEN_MANAGEMENT_PCT, WOMEN_EXECUTIVE_PCT, DISABLED_EMPLOYEES, LOCAL_EMPLOYMENT_PCT,
+    MIN_WAGE_COMPLIANCE, AVG_SALARY_THB, BENEFITS_BEYOND_LEGAL, PROVIDENT_FUND_PCT,
+    LOST_TIME_INJURIES, INJURY_RATE, FATALITIES, SAFETY_TRAINING_HOURS, SAFETY_COMMITTEE,
+    TRAINING_HOURS_AVG, TRAINING_BUDGET_THB, CAREER_DEVELOPMENT_PROGRAM,
+    CSR_BUDGET_THB, COMMUNITY_PROJECTS, LOCAL_SUPPLIER_PCT, SUPPLIER_CODE_OF_CONDUCT, SUPPLIER_ESG_ASSESSMENT,
     -- Governance
-    board_size,
-    board_independence_pct,
-    board_female_pct,
-    has_ethics_policy,
-    has_whistleblower_policy,
-    -- Metadata
-    notes,
-    created_at,
-    updated_at
+    BOARD_TOTAL, BOARD_INDEPENDENT_PCT, BOARD_WOMEN_PCT, BOARD_MEETINGS_YEAR, BOARD_ATTENDANCE_PCT,
+    HAS_AUDIT_COMMITTEE, HAS_RISK_COMMITTEE, HAS_CG_COMMITTEE, HAS_SUSTAINABILITY_COMMITTEE,
+    CODE_OF_CONDUCT, ANTI_CORRUPTION_POLICY, WHISTLEBLOWER_POLICY, ETHICS_TRAINING_PCT, CORRUPTION_CASES,
+    CGR_SCORE, ISO14001_CERTIFIED, ISO45001_CERTIFIED, SET_ESG_RATING, THSI_MEMBER,
+    EXTERNAL_ASSURANCE, ASSURANCE_PROVIDER,
+    NOTES
+) VALUES (
+    2023, 'Submitted to SET', 'Technology', '2024-04-30',
+    -- Environmental
+    8500, 4200, 45000, 15, 12,
+    25000, 8750, 2.8, 500,
+    180000, 35, 450, 75, 12, FALSE,
+    0, 0,
+    -- Social
+    1850, 1650, 200, 280, 8.5,
+    45, 38, 25, 28, 85,
+    TRUE, 45000, TRUE, 5,
+    3, 0.42, 0, 5200, TRUE,
+    28, 2800000, TRUE,
+    5500000, 12, 72, TRUE, TRUE,
+    -- Governance
+    11, 45, 27, 12, 95,
+    TRUE, TRUE, TRUE, TRUE,
+    TRUE, TRUE, TRUE, 98, 0,
+    '4 Stars', TRUE, TRUE, TRUE, TRUE,
+    TRUE, 'KPMG Thailand',
+    'FY2023 One Report - Submitted to SET April 2024'
+);
+
+-- Create summary view
+CREATE OR REPLACE VIEW ONE_REPORT_SUMMARY AS
+SELECT
+    REPORT_YEAR,
+    REPORT_STATUS,
+    SECTOR,
+    -- E Score inputs
+    GHG_SCOPE1_TCO2E + COALESCE(GHG_SCOPE2_TCO2E, 0) AS TOTAL_EMISSIONS,
+    ROUND(ENERGY_RENEWABLE_MWH / NULLIF(ENERGY_TOTAL_MWH, 0) * 100, 1) AS RENEWABLE_PCT,
+    WASTE_RECYCLED_PCT,
+    -- S Score inputs
+    EMPLOYEES_TOTAL,
+    WOMEN_MANAGEMENT_PCT,
+    INJURY_RATE,
+    TRAINING_HOURS_AVG,
+    -- G Score inputs
+    BOARD_INDEPENDENT_PCT,
+    BOARD_WOMEN_PCT,
+    CGR_SCORE,
+    SET_ESG_RATING,
+    CREATED_AT
 FROM ESG_METRICS
-ORDER BY reporting_year DESC, organization_name;
+ORDER BY REPORT_YEAR DESC;

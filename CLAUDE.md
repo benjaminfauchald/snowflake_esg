@@ -1,151 +1,95 @@
-# ESG Reporting Portal - Project Guide
+# ESG Reporting Project - Development Rules
 
-**Version:** 1.2
-**Last Updated:** 2025-12-02
-**Status:** IMPLEMENTED
+## Snowflake Streamlit-in-Snowflake (SiS) Edge Cases
 
----
+### Streamlit API Compatibility
+Snowflake runs an older version of Streamlit. Avoid these unsupported features:
 
-## Project Context
+| Feature | Don't Use | Use Instead |
+|---------|-----------|-------------|
+| DataFrame hide_index | `st.dataframe(df, hide_index=True)` | `st.dataframe(df)` |
+| Button type param | `st.button("X", type="primary")` | `st.button("X")` |
+| Form submit type | `st.form_submit_button("X", type="primary")` | `st.form_submit_button("X")` |
+| Download button type | `st.download_button(..., type="primary")` | `st.download_button(...)` |
+| Rerun | `st.rerun()` | `st.experimental_rerun()` |
+| Page config in pages | `st.set_page_config()` in page files | Only use in main file |
+| Data editor | `st.data_editor()` | Use `st.dataframe()` + form inputs |
 
-This is a Streamlit-in-Snowflake CRUD application for ESG (Environmental, Social, Governance) reporting. Users can authenticate, manage ESG data rows, and download reports for government submission.
+### SnowCLI Deployment Issues
+- **Don't use `snow streamlit deploy`** for creating apps - it adds default packages that can cause "TypeError: bad argument type for built-in operation" errors
+- **Use raw SQL to create Streamlit apps:**
+  ```sql
+  CREATE STREAMLIT DB.SCHEMA.APP_NAME
+    ROOT_LOCATION = '@DB.SCHEMA.STAGE/app_folder'
+    MAIN_FILE = 'streamlit_app.py'
+    QUERY_WAREHOUSE = WAREHOUSE_NAME;
+  ```
+- **Use PUT to upload files:**
+  ```sql
+  PUT file:///path/to/streamlit_app.py @DB.SCHEMA.STAGE/app_folder/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE
+  ```
 
-### Key Decisions
-- **Snowflake Account:** Using existing account
-- **CI/CD Auth:** Key-pair authentication
-- **Cortex AI:** Enabled (Claude 3.5 Sonnet)
-- **Data Scope:** Single organization
+### File Structure
+- Keep `streamlit_app.py` at root level, not in subdirectories
+- Avoid multi-page apps with `pages/` folder - use tabs within single file instead
 
----
+### CI/CD with GitHub Actions
+- Use key-pair authentication (SNOWFLAKE_JWT)
+- Clean whitespace from secrets: `CLEAN_VAR=$(echo "${VAR}" | tr -d '[:space:]')`
+- Use `printf` instead of heredoc for TOML config generation (avoids YAML parsing issues)
+- Base64 encode private key for GitHub secrets
+- Use absolute paths for key files: `/home/runner/.snowflake/rsa_key.p8`
 
-## Implementation Checklist
-
-### Phase 1: Environment Setup
-- [x] Install SnowCLI via Homebrew
-- [x] Initialize project structure
-- [x] Configure Snowflake connection (key-pair auth)
-- [x] Test connection: `snow connection test`
-
-### Phase 2: Snowflake Infrastructure
-- [x] Create `setup/01_database.sql` - Database & warehouse
-- [x] Create `setup/02_tables.sql` - ESG_METRICS table
-- [x] Create `setup/03_sample_data.sql` - Sample records
-- [x] Deploy to Snowflake (6 sample records loaded)
-
-### Phase 3: Streamlit Application
-- [x] `app/streamlit_app.py` - Main entry point
-- [x] `app/pages/1_Dashboard.py` - Metrics visualization
-- [x] `app/pages/2_Data_Entry.py` - CRUD operations
-- [x] `app/pages/3_Reports.py` - CSV/report download
-- [x] `app/pages/4_AI_Insights.py` - Cortex AI integration
-- [x] `app/utils/database.py` - DB operations
-- [x] `app/utils/export.py` - Export utilities
-
-### Phase 4: CI/CD
-- [x] `.github/workflows/deploy.yml` - GitHub Actions pipeline
-- [x] `scripts/deploy.sh` - Local deployment script
-- [ ] Configure GitHub secrets
-- [ ] Generate RSA key pair for CI/CD
-
-### Phase 5: Documentation
-- [x] `README.md` - Full documentation
-- [x] `CLAUDE.md` - Project guide (this file)
-
----
-
-## Project Structure
-
-```
-snowflake_esg/
-├── app/
-│   ├── streamlit_app.py      # Main app
-│   ├── pages/                # Multi-page app
-│   └── utils/                # Helper modules
-├── setup/                    # SQL scripts
-├── scripts/                  # Deployment scripts
-├── .github/workflows/        # CI/CD
-├── snowflake.yml            # SnowCLI config
-├── requirements.txt         # Dependencies
-├── README.md                # User docs
-└── CLAUDE.md                # This file
+### Snowpark Session
+```python
+from snowflake.snowpark.context import get_active_session
+session = get_active_session()
 ```
 
----
+### Table Column Names
+- Snowflake uses UPPERCASE column names by default
+- Access as: `df["COLUMN_NAME"]` not `df["column_name"]`
 
-## Quick Commands
+### Handling NaN/Null Values
+- Pandas returns NaN for null database values
+- Use helper functions to safely convert:
+```python
+def safe_int(val, default=0):
+    try:
+        if val is None or (isinstance(val, float) and str(val) == 'nan'):
+            return default
+        return int(val)
+    except:
+        return default
 
+def safe_float(val, default=0.0):
+    try:
+        if val is None or (isinstance(val, float) and str(val) == 'nan'):
+            return default
+        return float(val)
+    except:
+        return default
+```
+
+## Deploy Commands
+
+### Local Deploy (Manual)
 ```bash
-# Configure connection
-snow connection add
+# Upload file to stage
+snow sql -q "PUT file:///path/to/streamlit_app.py @ESG_REPORTING.PROD.STREAMLIT/esg_app/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE"
 
-# Test connection
-snow connection test
-
-# Deploy everything
-./scripts/deploy.sh
-
-# Or deploy manually:
-snow sql -f setup/01_database.sql
-snow sql -f setup/02_tables.sql
-snow sql -f setup/03_sample_data.sql
-snow streamlit deploy
-
-# Get app URL
-snow streamlit get-url esg_app
+# Create/recreate app (if needed)
+snow sql -q "CREATE OR REPLACE STREAMLIT ESG_REPORTING.PROD.ESG_APP
+  ROOT_LOCATION = '@ESG_REPORTING.PROD.STREAMLIT/esg_app'
+  MAIN_FILE = 'streamlit_app.py'
+  QUERY_WAREHOUSE = COMPUTE_WH"
 ```
 
----
-
-## ESG Table Schema
-
-**Table:** `ESG_REPORTING.PROD.ESG_METRICS`
-
-| Category | Columns |
-|----------|---------|
-| **Identity** | id, organization_name, reporting_year, reporting_date |
-| **Environmental** | ghg_scope1_mtco2e, ghg_scope2_mtco2e, energy_consumption_mwh, renewable_energy_pct, water_consumption_m3, waste_generated_tons, waste_recycled_pct |
-| **Social** | total_employees, female_employees_pct, employee_turnover_pct, safety_incidents, training_hours_per_employee |
-| **Governance** | board_size, board_independence_pct, board_female_pct, has_ethics_policy, has_whistleblower_policy |
-| **Metadata** | notes, created_by, created_at, updated_by, updated_at |
-
----
-
-## CI/CD Setup (Pending)
-
-### GitHub Secrets Required
-| Secret | Description |
-|--------|-------------|
-| `SNOWFLAKE_ACCOUNT` | Account identifier (e.g., `xy12345.us-east-1`) |
-| `SNOWFLAKE_USER` | Service account username |
-| `SNOWFLAKE_PRIVATE_KEY` | RSA private key contents |
-
-### Generate Key Pair
+### Get App URL
 ```bash
-openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt
-openssl rsa -in rsa_key.p8 -pubout -out rsa_key.pub
-
-# Then in Snowflake:
-ALTER USER your_user SET RSA_PUBLIC_KEY='<public key content>';
+snow streamlit get-url ESG_REPORTING.PROD.ESG_APP
 ```
 
----
-
-## Development Notes
-
-- Streamlit runs inside Snowflake (Streamlit-in-Snowflake)
-- Uses `snowflake.snowpark.context.get_active_session()` for DB access
-- Cortex AI uses `SNOWFLAKE.CORTEX.COMPLETE()` function
-- All data stays within Snowflake environment
-
----
-
-## Live App
-
-**URL:** https://app.snowflake.com/ZLOFVHD/si80049/#/streamlit-apps/ESG_REPORTING.PROD.ESG_APP
-
-## Next Steps
-
-1. ~~Run `snow connection add` to configure Snowflake credentials~~ ✅
-2. ~~Run `./scripts/deploy.sh` to deploy the app~~ ✅
-3. Set up GitHub secrets for CI/CD (optional)
-4. Add more ESG data through the Data Entry page
+## Project URLs
+- **App:** https://app.snowflake.com/ZLOFVHD/si80049/#/streamlit-apps/ESG_REPORTING.PROD.ESG_APP
+- **GitHub:** https://github.com/benjaminfauchald/snowflake_esg
